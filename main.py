@@ -3,14 +3,27 @@
 import pygame
 import random
 import math
+from pygame import mixer
 
 # Initializing pygame
 pygame.init()
 
+# set up background 
+background = pygame.image.load("Resources\\Background-1.jpg")
+scaled_background = pygame.transform.scale(background, (1600,1200))
+
+
+#background music
+mixer.music.load("Resources\\background.wav")
+mixer.music.play(-1)
+
+#score text
+score_font = pygame.font.Font('freesansbold.ttf', 64)
+
 # Display
 screen = pygame.display.set_mode((1600, 1200))
-pygame.display.set_caption("Space Invaders")
-pygame_icon = pygame.image.load("Resources\\ufo-1.png")
+pygame.display.set_caption("Bean Goblin")
+pygame_icon = pygame.image.load("Resources\\bullet.png")
 # 32x32 image
 pygame.display.set_icon(pygame_icon)
 
@@ -19,13 +32,14 @@ class Bullet:
         self.state = "Ready"
         self.x = x
         self.y = y
-        self.change = -2
+        self.change = -4
         self.img = pygame.image.load('Resources\\bullet.png')
         #If sprite needs rotating
         #self.rotated = pygame.transform.rotate.(self.img, angle)
 
     def shoot(self):
         #screen.blit(self.rotated, self.x,self.y)
+        self.change = -4
         screen.blit(self.img, (self.x,self.y))
 
     def move(self):
@@ -41,6 +55,7 @@ class Player:
         self.x = x
         self.y = 1200-64
         self.change = change
+        self.score = 0
         
 
     def player_set(self):
@@ -77,25 +92,37 @@ class Enemy:
 
     def is_hit(self, bullet):
         distance = math.sqrt((self.x - bullet.x)**2 + (self.y - bullet.y)**2)
-        if distance < 27:
-            #CoNTINUE
+        if distance < 48:
+            return True
+        return False
+    
+    def lose(self):
+        if self.y > 1136:
+            return True
+        return False
 
-
+enemies = []
 player = Player(768)
-enemy = Enemy(random.randint(0, 1536), random.randint(0, 336))
+for i in range(6):
+    x = random.randint(0, 1536)
+    y = random.randint(0, 336)
+    enemies.append(Enemy(x,y))
 bullet = Bullet()
 
-
+lost = False
 running = True
+aliens = 7
 while running:
-    screen.fill((0,0,0))
 
+    screen.fill((0,0,0))
+    screen.blit(scaled_background, (0,0))
+    score_display = score_font.render(f'Round: {aliens-6} | Beaned: {player.score}', True, (255,255,255))
+    screen.blit(score_display, (20,20))
     # loop events
     for event in pygame.event.get():
         keys = pygame.key.get_pressed()
         if event.type == pygame.QUIT:
             running = False
-
         if event.type == pygame.KEYDOWN:
             if keys[pygame.K_a]:
                 player.change = -1
@@ -106,17 +133,40 @@ while running:
                     bullet.x = player.x
                     bullet.y = player.y
                     bullet.state = "Fire"
+                    mixer.Sound('Resources\\laser.wav').play()
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_a or event.key == pygame.K_d:
                 player.change = 0
 
-    player.move()
-    enemy.move()
-    bullet.move()
-    #show items
-    player.player_set()
-    enemy.enemy_set()
-    if bullet.state == "Fire":
-        bullet.shoot()
-
-    pygame.display.flip()
+    if not lost:
+        player.move()
+        for enemy in enemies:
+            enemy.move()
+            if enemy.lose():
+                enemies = []
+                end_font = pygame.font.Font('freesansbold.ttf', 64)
+                end_display = end_font.render(f'GAME OVER', True, (255,0,0))
+                screen.blit(end_display)
+        bullet.move()
+        for i, enemy in enumerate(enemies):
+            if enemy.is_hit(bullet):
+                bullet.state = "Ready"
+                mixer.Sound('resources\\explosion.wav').play()
+                enemies.pop(i)
+                bullet.x = player.x
+                bullet.y = player.y
+                bullet.change = 0
+                if enemies == []:
+                    for i in range(aliens):
+                        x = random.randint(0, 1536)
+                        y = random.randint(0, 336)
+                        enemies.append(Enemy(x,y))
+                    aliens = round(aliens * 1.5)
+                player.score += 1
+        #show items
+        player.player_set()
+        for enemy in enemies:
+            enemy.enemy_set()
+        if bullet.state == "Fire":
+            bullet.shoot()
+        pygame.display.flip()
