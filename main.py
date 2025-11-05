@@ -18,7 +18,7 @@ mixer.music.load("Resources\\background.wav")
 mixer.music.play(-1)
 
 #score text
-score_font = pygame.font.Font('freesansbold.ttf', 64)
+score_font = pygame.font.Font('Resources\\Sixtyfour-Regular-VariableFont_BLED,SCAN.ttf', 64)
 
 # Display
 screen = pygame.display.set_mode((1600, 1200))
@@ -151,7 +151,10 @@ while running:
         for i, enemy in enumerate(enemies):
             if enemy.is_hit(bullet):
                 bullet.state = "Ready"
-                mixer.Sound('resources\\explosion.wav').play()
+                if random.random() >= 0.90:
+                    mixer.Sound('resources\\background.wav').play()
+                else:
+                    mixer.Sound('Resources\\explosion.wav').play()
                 enemies.pop(i)
                 bullet.x = player.x
                 bullet.y = player.y
