@@ -27,6 +27,24 @@ pygame_icon = pygame.image.load("Resources\\bullet.png")
 # 32x32 image
 pygame.display.set_icon(pygame_icon)
 
+class Button():
+    def __init__(self,x,y,img,scale):
+        self.x = x
+        self.y = y
+        self.img = pygame.image.load(img)
+        self.img = pygame.transform.scale(self.img, (int(self.img.get_width()*scale),int(self.img.get_height()*scale)))
+        self.rect = self.img.get_rect()
+        self.scale = scale
+
+    def draw(self):
+        pos = pygame.mouse.get_pos()
+        print(pos)
+        if self.rect.collidepoint(pos):
+            print("Hover")
+        screen.blit(self.img, (self.x, self.y))
+
+        
+
 class Bullet:
     def __init__(self, x=0, y=0):
         self.state = "Ready"
@@ -74,8 +92,8 @@ class Enemy:
         self.img = pygame.image.load('Resources\\alien.png')
         self.x = x
         self.y = y
-        self.x_change = 0.6
-        self.y_change = 40
+        self.x_change = 6
+        self.y_change = 800
 
     def enemy_set(self):
         screen.blit (self.img, (self.x, self.y))
@@ -84,10 +102,10 @@ class Enemy:
     def move(self):
         self.x += self.x_change
         if self.x <= 0:
-            self.x_change = 0.6
+            self.x_change = 6
             self.y += self.y_change
         elif self.x >= 1536:
-            self.x_change = -0.6
+            self.x_change = -6
             self.y += self.y_change
 
     def is_hit(self, bullet):
@@ -113,10 +131,9 @@ lost = False
 running = True
 aliens = 7
 while running:
-
     screen.fill((0,0,0))
     screen.blit(scaled_background, (0,0))
-    score_display = score_font.render(f'Round: {aliens-6} | Beaned: {player.score}', True, (255,255,255))
+    score_display = score_font.render(f'Round: {aliens-6} | Beaned: {player.score}', True, (255,50,255))
     screen.blit(score_display, (20,20))
     # loop events
     for event in pygame.event.get():
@@ -125,9 +142,9 @@ while running:
             running = False
         if event.type == pygame.KEYDOWN:
             if keys[pygame.K_a]:
-                player.change = -1
+                player.change = -2
             if keys[pygame.K_d]:
-                player.change = 1
+                player.change = 2
             if keys[pygame.K_SPACE]:
                 if bullet.state == "Ready":
                     bullet.x = player.x
@@ -138,15 +155,24 @@ while running:
             if event.key == pygame.K_a or event.key == pygame.K_d:
                 player.change = 0
 
-    if not lost:
-        player.move()
-        for enemy in enemies:
-            enemy.move()
-            if enemy.lose():
-                enemies = []
-                end_font = pygame.font.Font('freesansbold.ttf', 64)
-                end_display = end_font.render(f'GAME OVER', True, (255,0,0))
-                screen.blit(end_display)
+    
+    player.move()
+    for enemy in enemies:
+        enemy.move()
+        if enemy.lose():
+            enemies = []
+
+            lost = True
+            
+    if lost:
+        end_font = pygame.font.Font('Resources\\Times New Roman Regular.ttf', 128)
+        end_display = end_font.render(f'GAME OVER', True, (255,30,30))
+        mixer.Sound('Resources\\death.mp3').play()
+        screen.blit(end_display,(400,500))
+        button = Button(650, 650, 'Resources\\button.png', 0.2)
+        button.draw()
+
+    else:
         bullet.move()
         for i, enemy in enumerate(enemies):
             if enemy.is_hit(bullet):
@@ -172,4 +198,4 @@ while running:
             enemy.enemy_set()
         if bullet.state == "Fire":
             bullet.shoot()
-        pygame.display.flip()
+    pygame.display.flip()
