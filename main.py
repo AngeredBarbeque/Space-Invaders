@@ -34,14 +34,21 @@ class Button():
         self.img = pygame.image.load(img)
         self.img = pygame.transform.scale(self.img, (int(self.img.get_width()*scale),int(self.img.get_height()*scale)))
         self.rect = self.img.get_rect()
-        self.scale = scale
+        self.rect.x = x
+        self.rect.y = y
+        self.clicked = False
 
     def draw(self):
         pos = pygame.mouse.get_pos()
-        print(pos)
+        action = True
         if self.rect.collidepoint(pos):
-            print("Hover")
+            if pygame.mouse.get_pressed()[0]==1 and self.clicked == False:
+                self.clicked = True
+                action = False
+            else:
+                action = True
         screen.blit(self.img, (self.x, self.y))
+        return action
 
         
 
@@ -92,8 +99,8 @@ class Enemy:
         self.img = pygame.image.load('Resources\\alien.png')
         self.x = x
         self.y = y
-        self.x_change = 6
-        self.y_change = 800
+        self.x_change = 0.6
+        self.y_change = 100
 
     def enemy_set(self):
         screen.blit (self.img, (self.x, self.y))
@@ -102,10 +109,10 @@ class Enemy:
     def move(self):
         self.x += self.x_change
         if self.x <= 0:
-            self.x_change = 6
+            self.x_change = 0.6
             self.y += self.y_change
         elif self.x >= 1536:
-            self.x_change = -6
+            self.x_change = -0.6
             self.y += self.y_change
 
     def is_hit(self, bullet):
@@ -130,10 +137,11 @@ bullet = Bullet()
 lost = False
 running = True
 aliens = 7
+round_num = 1
 while running:
     screen.fill((0,0,0))
     screen.blit(scaled_background, (0,0))
-    score_display = score_font.render(f'Round: {aliens-6} | Beaned: {player.score}', True, (255,50,255))
+    score_display = score_font.render(f'Round: {round_num} | Beaned: {player.score}', True, (255,50,255))
     screen.blit(score_display, (20,20))
     # loop events
     for event in pygame.event.get():
@@ -161,7 +169,6 @@ while running:
         enemy.move()
         if enemy.lose():
             enemies = []
-
             lost = True
             
     if lost:
@@ -170,7 +177,7 @@ while running:
         mixer.Sound('Resources\\death.mp3').play()
         screen.blit(end_display,(400,500))
         button = Button(650, 650, 'Resources\\button.png', 0.2)
-        button.draw()
+        lost = button.draw()
 
     else:
         bullet.move()
@@ -191,6 +198,7 @@ while running:
                         y = random.randint(0, 336)
                         enemies.append(Enemy(x,y))
                     aliens = round(aliens * 1.5)
+                    round_num += 1
                 player.score += 1
         #show items
         player.player_set()
